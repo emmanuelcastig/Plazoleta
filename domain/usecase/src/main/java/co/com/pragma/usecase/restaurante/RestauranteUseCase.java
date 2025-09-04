@@ -21,4 +21,6 @@ public class RestauranteUseCase {
     private boolean validarPropietario(Long idPropietario) {
         return propietarioConsumerGateway.verificarExistenciaPropietario(idPropietario);
     }
+
+
 }
