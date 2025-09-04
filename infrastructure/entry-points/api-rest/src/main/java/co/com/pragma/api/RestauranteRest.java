@@ -20,10 +20,12 @@ public class RestauranteRest {
     private final RestauranteMapper restauranteMapper;
 
     @PostMapping(path = "/crear/restaurante")
-    public ResponseEntity<Void> crearRestaurante(@RequestBody @Valid RestauranteRequest restauranteRequest) {
+    public ResponseEntity<Void> crearRestaurante(@RequestBody @Valid RestauranteRequest restauranteRequest,
+                                                 @RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7);
         log.info("Iniciando creacion de restaurante: {}", restauranteRequest.getNombre());
-        restauranteUseCase.crearRestaurante(restauranteMapper.toDomain(restauranteRequest));
-        log.info("Restaurante creada con exito: {}", restauranteRequest.getNombre());
+        restauranteUseCase.crearRestaurante(restauranteMapper.toDomain(restauranteRequest), token);
+        log.info("Restaurante creado con exito: {}", restauranteRequest.getNombre());
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 }

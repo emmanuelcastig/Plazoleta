@@ -53,3 +53,6 @@ resilience4j:
         waitDurationInOpenState: "10s"
 cors:
   allowed-origins: "http://localhost:4200,http://localhost:9001"
+jwt:
+  secret: "fa9e14cbf255996c837711a02c590f242d4626481019d5ed94a432922523e4a5"
+  expiration: 3600000

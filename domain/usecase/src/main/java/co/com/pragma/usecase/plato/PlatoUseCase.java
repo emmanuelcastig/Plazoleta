@@ -7,6 +7,7 @@ import co.com.pragma.model.restaurante.gateways.RestauranteRepository;
 import lombok.RequiredArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 @RequiredArgsConstructor
 public class PlatoUseCase {
@@ -14,16 +15,16 @@ public class PlatoUseCase {
     private final PlatoRepository platoRepository;
     private final RestauranteRepository restauranteRepository;
 
-    public void crearPlato(Plato plato) {
-        validarRestaurante(plato.getIdRestaurante());
+    public void crearPlato(Plato plato, Long propietarioId) {
+        validarRestaurante(plato.getIdRestaurante(), propietarioId);
         plato.setDisponible(true);
         platoRepository.crearPlato(plato);
     }
 
-    public void actualizarPlato(Long idPlato, BigDecimal nuevoPrecio, String nuevaDescripcion) {
+    public void actualizarPlato(Long idPlato, BigDecimal nuevoPrecio, String nuevaDescripcion, Long propietarioId) {
         Plato plato = platoRepository.buscarPlato(idPlato)
                 .orElseThrow(() -> new IllegalArgumentException("El plato no existe"));
-        validarRestaurante(plato.getIdRestaurante());
+        validarRestaurante(plato.getIdRestaurante(), propietarioId);
         if (nuevoPrecio != null) {
             plato.setPrecio(nuevoPrecio);
         }
@@ -33,12 +34,15 @@ public class PlatoUseCase {
         platoRepository.actualizarPlato(plato);
     }
 
-    private boolean validarRestaurante(Long idRestaurante) {
-        if (restauranteRepository.obtenerRestaurantePorId(idRestaurante)!= null) {
-            return true;
-        } else {
+    private void validarRestaurante(Long idRestaurante, Long idPropietario) {
+        Optional<Restaurante> restaurante = restauranteRepository.obtenerRestaurantePorId(idRestaurante);
+        if (restaurante == null) {
             throw new IllegalArgumentException("El restaurante no existe");
         }
-
+        if (!restaurante.get().getIdPropietario().equals(idPropietario)) {
+            throw new IllegalArgumentException("El restaurante no pertenece al propietario autenticado");
+        }
     }
+
+
 }

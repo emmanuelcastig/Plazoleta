@@ -10,17 +10,16 @@ public class RestauranteUseCase {
     private final RestauranteRepository restauranteRepository;
     private final PropietarioConsumerGateway propietarioConsumerGateway;
 
-    public void crearRestaurante(Restaurante restaurante) {
-        if (validarPropietario(restaurante.getIdPropietario())){
+    public void crearRestaurante(Restaurante restaurante, String token) {
+        if (validarPropietario(restaurante.getIdPropietario(), token)){
             restauranteRepository.crearRestaurante(restaurante);
         } else {
             throw new IllegalArgumentException("El propietario no existe");
         }
     }
 
-    private boolean validarPropietario(Long idPropietario) {
-        return propietarioConsumerGateway.verificarExistenciaPropietario(idPropietario);
+    private boolean validarPropietario(Long idPropietario, String token) {
+        return propietarioConsumerGateway.verificarExistenciaPropietario(idPropietario, token);
     }
-
 
 }

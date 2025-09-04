@@ -28,12 +28,13 @@ public class RestConsumer  implements PropietarioConsumerGateway
 
     @Override
     @CircuitBreaker(name = "propietarioService")
-    public boolean verificarExistenciaPropietario(Long id) {
+    public boolean verificarExistenciaPropietario(Long id, String token) {
         String endpoint = url + "/api/v1/propietarios/" + id;
 
         Request request = new Request.Builder()
                 .url(endpoint)
                 .get()
+                .addHeader("Authorization", "Bearer " + token) // 👈 aquí envías el JWT
                 .build();
 
         log.info("Consultando propietario en el servicio externo: {}", endpoint);
@@ -43,7 +44,7 @@ public class RestConsumer  implements PropietarioConsumerGateway
             }
 
             String body = response.body().string();
-            log.info("El propietario existe con exito");
+            log.info("El propietario existe con éxito");
             return Boolean.parseBoolean(body);
         } catch (IOException e) {
             throw new RuntimeException("Error en la comunicación con el servicio propietario", e);
