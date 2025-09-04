@@ -1,0 +1,18 @@
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-undertow'
+    implementation project(':usecase')
+    implementation project(':model')
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    runtimeOnly 'org.postgresql:postgresql'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+}
+
+
+configurations{
+	implementation.exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
+}

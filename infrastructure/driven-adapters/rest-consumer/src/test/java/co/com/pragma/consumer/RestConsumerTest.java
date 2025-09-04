@@ -1,0 +1,61 @@
+package co.com.pragma.consumer;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import okhttp3.OkHttpClient;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import org.junit.jupiter.api.*;
+import org.springframework.test.util.ReflectionTestUtils;
+import java.io.IOException;
+
+
+class RestConsumerTest {
+
+    private static RestConsumer restConsumer;
+
+    private static MockWebServer mockBackEnd;
+
+
+    @BeforeAll
+    static void setUp() throws IOException {
+        mockBackEnd = new MockWebServer();
+        mockBackEnd.start();
+
+        OkHttpClient client = new OkHttpClient.Builder().build();
+
+        String url = mockBackEnd.url("url").toString();
+        restConsumer = new RestConsumer(url, client, new ObjectMapper());
+    }
+
+    @AfterAll
+    static void tearDown() throws IOException {
+
+        mockBackEnd.shutdown();
+    }
+
+    @Test
+    @DisplayName("Validate the function testGet.")
+    void validateTestGet() throws IOException {
+        mockBackEnd.enqueue(new MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setResponseCode(200)
+                .setBody("{\"state\" : \"ok\"}"));
+
+        var response = restConsumer.testGet();
+
+        Assertions.assertEquals("ok", response.getState());
+    }
+
+    @Test
+    @DisplayName("Validate the function testPost.")
+    void validateTestPost() throws IOException {
+        mockBackEnd.enqueue(new MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setResponseCode(200)
+                .setBody("{\"state\" : \"ok\"}"));
+
+        var response = restConsumer.testPost();
+
+        Assertions.assertEquals("ok", response.getState());
+    }
+}
