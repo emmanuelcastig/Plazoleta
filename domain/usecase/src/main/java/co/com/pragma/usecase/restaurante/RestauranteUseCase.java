@@ -4,6 +4,9 @@ import co.com.pragma.model.restaurante.Restaurante;
 import co.com.pragma.model.restaurante.consumer.PropietarioConsumerGateway;
 import co.com.pragma.model.restaurante.gateways.RestauranteRepository;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+
 @RequiredArgsConstructor
 public class RestauranteUseCase {
 
@@ -20,6 +23,10 @@ public class RestauranteUseCase {
 
     private boolean validarPropietario(Long idPropietario, String token) {
         return propietarioConsumerGateway.verificarExistenciaPropietario(idPropietario, token);
+    }
+
+    public List<Restaurante> obtenerRestaurantes(int page, int size) {
+        return restauranteRepository.findAllByOrderByNombreAsc(page, size);
     }
 
 }

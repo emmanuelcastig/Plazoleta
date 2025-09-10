@@ -17,11 +17,11 @@ public class SecurityConfig {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/login").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
                         .requestMatchers("/api/v1/plazoleta/crear/restaurante").hasRole("ADMINISTRADOR")
                         .requestMatchers("/api/v1/plazoleta/crear/plato").hasRole("PROPIETARIO")
                         .requestMatchers("/api/v1/plazoleta/actualizar/plato/*").hasRole("PROPIETARIO")
+                        .requestMatchers("/api/v1/plazoleta/restaurantes").hasRole("CLIENTE")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(new CustomAuthenticationEntryPoint()))

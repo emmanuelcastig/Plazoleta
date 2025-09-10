@@ -5,8 +5,10 @@ import co.com.pragma.jpa.helper.AdapterOperations;
 import co.com.pragma.model.restaurante.Restaurante;
 import co.com.pragma.model.restaurante.gateways.RestauranteRepository;
 import org.reactivecommons.utils.ObjectMapper;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
-
+import org.springframework.data.domain.Pageable;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -27,5 +29,11 @@ public class JPARepositoryAdapter extends AdapterOperations<Restaurante, Restaur
     @Override
     public Optional<Restaurante> obtenerRestaurantePorId(Long id) {
         return repository.findById(id).map(this::toEntity);
+    }
+
+    @Override
+    public List<Restaurante> findAllByOrderByNombreAsc(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return repository.findAllByOrderByNombreAsc(pageable).map(this::toEntity).toList();
     }
 }
