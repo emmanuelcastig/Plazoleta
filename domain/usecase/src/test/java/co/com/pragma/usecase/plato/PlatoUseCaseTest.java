@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -87,5 +88,54 @@ class PlatoUseCaseTest {
         assertThatThrownBy(() -> platoUseCase.actualizarPlato(123L, BigDecimal.TEN, "desc", 10L))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("El plato no existe");
+    }
+
+    @Test
+    void obtenerPlatos_conCategoria() {
+        Plato plato = new Plato();
+        plato.setId(1L);
+        plato.setDescripcion("Plato con categoría");
+
+        when(platoRepository.findByIdRestauranteAndCategoria(1L, "Entradas", 0, 5))
+                .thenReturn(List.of(plato));
+
+        var resultado = platoUseCase.obtenerPlatos(1L, "Entradas", 0, 5);
+
+        assertThat(resultado).hasSize(1);
+        assertThat(resultado.get(0).getDescripcion()).isEqualTo("Plato con categoría");
+
+        verify(platoRepository).findByIdRestauranteAndCategoria(1L, "Entradas", 0, 5);
+        verify(platoRepository, never()).findByIdRestaurante(anyLong(), anyInt(), anyInt());
+    }
+
+    @Test
+    void obtenerPlatos_sinCategoria() {
+        Plato plato = new Plato();
+        plato.setId(2L);
+        plato.setDescripcion("Plato sin categoría");
+
+        when(platoRepository.findByIdRestaurante(1L, 0, 5))
+                .thenReturn(List.of(plato));
+
+        var resultado = platoUseCase.obtenerPlatos(1L, null, 0, 5);
+
+        assertThat(resultado).hasSize(1);
+        assertThat(resultado.get(0).getDescripcion()).isEqualTo("Plato sin categoría");
+
+        verify(platoRepository).findByIdRestaurante(1L, 0, 5);
+        verify(platoRepository, never()).findByIdRestauranteAndCategoria(anyLong(), anyString(), anyInt(), anyInt());
+    }
+
+    @Test
+    void obtenerPlatos_categoriaVaciaUsaFindByIdRestaurante() {
+        when(platoRepository.findByIdRestaurante(1L, 0, 5))
+                .thenReturn(List.of());
+
+        var resultado = platoUseCase.obtenerPlatos(1L, "   ", 0, 5);
+
+        assertThat(resultado).isEmpty();
+
+        verify(platoRepository).findByIdRestaurante(1L, 0, 5);
+        verify(platoRepository, never()).findByIdRestauranteAndCategoria(anyLong(), anyString(), anyInt(), anyInt());
     }
 }

@@ -7,6 +7,7 @@ import co.com.pragma.model.restaurante.gateways.RestauranteRepository;
 import lombok.RequiredArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 @RequiredArgsConstructor
@@ -44,5 +45,14 @@ public class PlatoUseCase {
             throw new IllegalArgumentException("El restaurante no pertenece al propietario autenticado");
         }
     }
+
+    public List<Plato> obtenerPlatos(Long idRestaurante, String categoria, int page, int size) {
+        if (categoria != null && !categoria.isBlank()) {
+            return platoRepository.findByIdRestauranteAndCategoria(idRestaurante, categoria, page, size);
+        } else {
+            return platoRepository.findByIdRestaurante(idRestaurante, page, size);
+        }
+    }
+
 
 }

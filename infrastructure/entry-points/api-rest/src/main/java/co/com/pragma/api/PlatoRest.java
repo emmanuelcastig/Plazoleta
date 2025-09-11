@@ -1,6 +1,7 @@
 package co.com.pragma.api;
 
 import co.com.pragma.api.dto.PlatoRequest;
+import co.com.pragma.api.dto.PlatoResponse;
 import co.com.pragma.api.dto.PlatoUpdateRequest;
 import co.com.pragma.api.mapper.PlatoMapper;
 import co.com.pragma.usecase.plato.PlatoUseCase;
@@ -18,6 +19,8 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -80,5 +83,53 @@ public class PlatoRest {
         log.info("Propietario {} intenta actualizar el plato {}", propietarioId, idPlato);
         platoUseCase.actualizarPlato(idPlato, request.getPrecio(), request.getDescripcion(), propietarioId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    @Operation(
+            summary = "Listar platos de un restaurante",
+            description = "Obtiene la lista de platos de un restaurante, con la posibilidad de filtrar por categoría y paginar los resultados.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Lista de platos obtenida exitosamente",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = PlatoResponse.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Parámetros inválidos en la solicitud",
+                            content = @Content
+                    ),
+                    @ApiResponse(
+                            responseCode = "401",
+                            description = "No autorizado",
+                            content = @Content
+                    )
+            }
+    )
+    @GetMapping("/platos")
+    public ResponseEntity<List<PlatoResponse>> listarPlatos(
+            @Parameter(description = "ID del restaurante", example = "5", required = true)
+            @RequestParam(name = "idRestaurante") Long idRestaurante,
+
+            @Parameter(description = "Categoría de los platos a filtrar", example = "Entradas")
+            @RequestParam(name = "categoria", required = false) String categoria,
+
+            @Parameter(description = "Número de página (para paginación)", example = "0")
+            @RequestParam(name = "page", defaultValue = "0") int page,
+
+            @Parameter(description = "Cantidad de registros por página", example = "10")
+            @RequestParam(name = "size", defaultValue = "10") int size
+    ) {
+        log.info("Consultando platos del restaurante {} con categoria={} page={} size={}",
+                idRestaurante, categoria, page, size);
+
+        List<PlatoResponse> response = platoUseCase
+                .obtenerPlatos(idRestaurante, categoria, page, size)
+                .stream()
+                .map(platoMapper::toResponse)
+                .toList();
+
+        return ResponseEntity.ok(response);
     }
 }
