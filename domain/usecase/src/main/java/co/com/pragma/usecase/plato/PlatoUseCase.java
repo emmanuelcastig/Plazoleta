@@ -35,14 +35,14 @@ public class PlatoUseCase {
     }
 
     private void validarRestaurante(Long idRestaurante, Long idPropietario) {
-        Optional<Restaurante> restaurante = restauranteRepository.obtenerRestaurantePorId(idRestaurante);
-        if (restaurante == null) {
-            throw new IllegalArgumentException("El restaurante no existe");
-        }
-        if (!restaurante.get().getIdPropietario().equals(idPropietario)) {
+        Optional<Restaurante> restauranteOpt = restauranteRepository.obtenerRestaurantePorId(idRestaurante);
+        Restaurante restaurante = restauranteOpt.orElseThrow(
+                () -> new IllegalArgumentException("El restaurante no existe")
+        );
+
+        if (!restaurante.getIdPropietario().equals(idPropietario)) {
             throw new IllegalArgumentException("El restaurante no pertenece al propietario autenticado");
         }
     }
-
 
 }
