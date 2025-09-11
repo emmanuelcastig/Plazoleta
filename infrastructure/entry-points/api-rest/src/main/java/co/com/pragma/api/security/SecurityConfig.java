@@ -23,6 +23,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/plazoleta/actualizar/plato/*").hasRole("PROPIETARIO")
                         .requestMatchers("/api/v1/plazoleta/restaurantes").hasRole("CLIENTE")
                         .requestMatchers("/api/v1/plazoleta/platos").hasRole("CLIENTE")
+                        .requestMatchers("/api/v1/plazoleta/pedidos").hasRole("CLIENTE")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(new CustomAuthenticationEntryPoint()))

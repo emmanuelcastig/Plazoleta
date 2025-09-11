@@ -34,7 +34,7 @@ public class RestConsumer  implements PropietarioConsumerGateway
         Request request = new Request.Builder()
                 .url(endpoint)
                 .get()
-                .addHeader("Authorization", "Bearer " + token) // 👈 aquí envías el JWT
+                .addHeader("Authorization", "Bearer " + token)
                 .build();
 
         log.info("Consultando propietario en el servicio externo: {}", endpoint);
