@@ -8,4 +8,6 @@ import java.util.List;
 public interface PedidoRepository {
     void crearPedido(Pedido pedido);
     boolean existsByIdClienteAndEstadoIn(Long idCliente, List<Estado> estados);
+    List<Pedido> findByEstadoAndIdRestaurante(Estado estado, Long idRestaurante, int page, int size);
+
 }

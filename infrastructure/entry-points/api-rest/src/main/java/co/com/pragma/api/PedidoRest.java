@@ -1,6 +1,7 @@
 package co.com.pragma.api;
 
 import co.com.pragma.api.dto.PedidoRequest;
+import co.com.pragma.model.enums.Estado;
 import co.com.pragma.model.pedido.Pedido;
 import co.com.pragma.model.pedido.PedidoPlato;
 import co.com.pragma.usecase.pedido.PedidoUseCase;
@@ -16,10 +17,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -65,6 +65,37 @@ public class PedidoRest {
         pedidoUseCase.crearPedido(pedido);
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @GetMapping("/listar")
+    @Operation(
+            summary = "Listar pedidos por estado",
+            description = "Devuelve la lista de pedidos filtrados por estado, pertenecientes al restaurante del empleado autenticado. La consulta es paginada.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Pedidos listados exitosamente"),
+                    @ApiResponse(responseCode = "204", description = "No se encontraron pedidos", content = @Content),
+                    @ApiResponse(responseCode = "401", description = "No autorizado", content = @Content)
+            }
+    )
+    public ResponseEntity<List<Pedido>> listarPedidos(
+            @RequestParam(name = "estado") Estado estado,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size" ,defaultValue = "10") int size,
+            @Parameter(hidden = true) Authentication authentication,
+            @RequestHeader("Authorization") String token
+    ) {
+        String jwt = token.replace("Bearer ", "");
+        Long idEmpleado = Long.parseLong(authentication.getName());
+
+        List<Pedido> pedidos = pedidoUseCase.listarPedidosPorEstadoYRestaurante(
+                idEmpleado, jwt, estado, page, size
+        );
+
+        if (pedidos.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok(pedidos);
     }
 
 }

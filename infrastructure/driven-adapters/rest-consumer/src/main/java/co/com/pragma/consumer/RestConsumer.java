@@ -1,11 +1,13 @@
 package co.com.pragma.consumer;
 
+import co.com.pragma.model.restaurante.consumer.EmpleadoConsumerGateway;
 import co.com.pragma.model.restaurante.consumer.PropietarioConsumerGateway;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -13,7 +15,7 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 @Slf4j
 @Service
-public class RestConsumer  implements PropietarioConsumerGateway
+public class RestConsumer  implements PropietarioConsumerGateway, EmpleadoConsumerGateway
 {
     private final String url;
     private final OkHttpClient client;
@@ -47,7 +49,34 @@ public class RestConsumer  implements PropietarioConsumerGateway
             log.info("El propietario existe con éxito");
             return Boolean.parseBoolean(body);
         } catch (IOException e) {
-            throw new RuntimeException("Error en la comunicación con el servicio propietario", e);
+            throw new RuntimeException("Error en la comunicación con el servicio usuarios", e);
+        }
+    }
+
+
+    @Override
+    @CircuitBreaker(name = "propietarioService")
+    public Long obtenerRestauranteEmpleado(Long id, String token) {
+        String endpoint = url + "/api/v1/empleados/" + id + "/restaurante";
+
+        Request request = new Request.Builder()
+                .url(endpoint)
+                .get()
+                .addHeader("Authorization", "Bearer " + token)
+                .build();
+
+        log.info("Consultando empleado en el servicio externo: {}", endpoint);
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new RuntimeException("Error al consumir servicio: " + response.code());
+            }
+
+            String body = response.body().string();
+            log.info("Respuesta del servicio: {}", body);
+
+            return Long.parseLong(body);
+        } catch (IOException e) {
+            throw new RuntimeException("Error en la comunicación con el servicio usuarios", e);
         }
     }
 }
