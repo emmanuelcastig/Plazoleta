@@ -2,9 +2,11 @@ package co.com.pragma.jpa;
 
 import co.com.pragma.jpa.entity.RestauranteEntity;
 import co.com.pragma.jpa.helper.AdapterOperations;
+import co.com.pragma.model.restaurante.PageResponse;
 import co.com.pragma.model.restaurante.Restaurante;
 import co.com.pragma.model.restaurante.gateways.RestauranteRepository;
 import org.reactivecommons.utils.ObjectMapper;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.domain.Pageable;
@@ -32,8 +34,21 @@ public class JPARepositoryAdapter extends AdapterOperations<Restaurante, Restaur
     }
 
     @Override
-    public List<Restaurante> findAllByOrderByNombreAsc(int page, int size) {
+    public PageResponse<Restaurante> findAllByOrderByNombreAsc(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return repository.findAllByOrderByNombreAsc(pageable).map(this::toEntity).toList();
+        Page<RestauranteEntity> result = repository.findAllByOrderByNombreAsc(pageable);
+
+        List<Restaurante> content = result.getContent()
+                .stream()
+                .map(this::toEntity)
+                .toList();
+
+        return new PageResponse<>(
+                content,
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalElements(),
+                result.getTotalPages()
+        );
     }
 }

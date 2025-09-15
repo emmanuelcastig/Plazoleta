@@ -2,6 +2,7 @@ package co.com.pragma.usecase.plato;
 
 import co.com.pragma.model.plato.Plato;
 import co.com.pragma.model.plato.gateways.PlatoRepository;
+import co.com.pragma.model.restaurante.PageResponse;
 import co.com.pragma.model.restaurante.Restaurante;
 import co.com.pragma.model.restaurante.gateways.RestauranteRepository;
 import lombok.RequiredArgsConstructor;
@@ -46,7 +47,7 @@ public class PlatoUseCase {
         }
     }
 
-    public List<Plato> obtenerPlatos(Long idRestaurante, String categoria, int page, int size) {
+    public PageResponse<Plato> obtenerPlatos(Long idRestaurante, String categoria, int page, int size) {
         if (categoria != null && !categoria.isBlank()) {
             return platoRepository.findByIdRestauranteAndCategoria(idRestaurante, categoria, page, size);
         } else {

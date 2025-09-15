@@ -1,8 +1,8 @@
 package co.com.pragma.model.plato.gateways;
 
 import co.com.pragma.model.plato.Plato;
+import co.com.pragma.model.restaurante.PageResponse;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface PlatoRepository {
@@ -12,7 +12,7 @@ public interface PlatoRepository {
 
     void actualizarPlato(Plato plato);
 
-    List<Plato> findByIdRestaurante(Long idRestaurante, int page, int size);
+    PageResponse<Plato> findByIdRestaurante(Long idRestaurante, int page, int size);
 
-    List<Plato> findByIdRestauranteAndCategoria(Long idRestaurante, String categoria, int page, int size);
+    PageResponse<Plato> findByIdRestauranteAndCategoria(Long idRestaurante, String categoria, int page, int size);
 }

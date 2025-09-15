@@ -4,6 +4,7 @@ import co.com.pragma.api.dto.PlatoRequest;
 import co.com.pragma.api.dto.PlatoResponse;
 import co.com.pragma.api.dto.PlatoUpdateRequest;
 import co.com.pragma.api.mapper.PlatoMapper;
+import co.com.pragma.model.restaurante.PageResponse;
 import co.com.pragma.usecase.plato.PlatoUseCase;
 import org.springframework.security.core.Authentication;
 import jakarta.validation.Valid;
@@ -108,7 +109,7 @@ public class PlatoRest {
             }
     )
     @GetMapping("/platos")
-    public ResponseEntity<List<PlatoResponse>> listarPlatos(
+    public ResponseEntity<PageResponse<PlatoResponse>> listarPlatos(
             @Parameter(description = "ID del restaurante", example = "5", required = true)
             @RequestParam(name = "idRestaurante") Long idRestaurante,
 
@@ -124,11 +125,20 @@ public class PlatoRest {
         log.info("Consultando platos del restaurante {} con categoria={} page={} size={}",
                 idRestaurante, categoria, page, size);
 
-        List<PlatoResponse> response = platoUseCase
-                .obtenerPlatos(idRestaurante, categoria, page, size)
+        var platos = platoUseCase.obtenerPlatos(idRestaurante, categoria, page, size);
+
+        var content = platos.getContent()
                 .stream()
                 .map(platoMapper::toResponse)
                 .toList();
+
+        PageResponse<PlatoResponse> response = new PageResponse<>(
+                content,
+                platos.getPage(),
+                platos.getSize(),
+                platos.getTotalElements(),
+                platos.getTotalPages()
+        );
 
         return ResponseEntity.ok(response);
     }
