@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public class PedidoJPARepositoryAdapter extends AdapterOperations<Pedido, PedidoEntity, Long, PedidoJPARepository>
@@ -52,4 +53,15 @@ public class PedidoJPARepositoryAdapter extends AdapterOperations<Pedido, Pedido
                 result.getTotalPages()
         );
     }
+
+    @Override
+    public void actualizarPedido(Pedido pedido) {
+        this.crearPedido(pedido);
+    }
+
+    @Override
+    public Optional<Pedido> buscarPorIdPedido(Long id){
+        return repository.findById(id).map(this::toEntity);
+    }
+
 }

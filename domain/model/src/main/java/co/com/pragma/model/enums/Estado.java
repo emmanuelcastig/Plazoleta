@@ -2,8 +2,9 @@ package co.com.pragma.model.enums;
 
 public enum Estado {
     PENDIENTE("PENDIENTE"),
-    EN_PROCESO("EN_PROCESO"),
-    LISTO("LISTO");
+    EN_PREPARACION("EN_PREPARACION"),
+    LISTO("LISTO"),
+    ENTREGADO("ENTREGADO");
 
     private final String nombre;
 

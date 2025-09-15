@@ -1,5 +1,6 @@
 package co.com.pragma.usecase.restaurante;
 
+import co.com.pragma.model.restaurante.PageResponse;
 import co.com.pragma.model.restaurante.Restaurante;
 import co.com.pragma.model.restaurante.consumer.PropietarioConsumerGateway;
 import co.com.pragma.model.restaurante.gateways.RestauranteRepository;
@@ -7,7 +8,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -61,12 +61,19 @@ class RestauranteUseCaseTest {
         Restaurante r2 = new Restaurante();
         r2.setNombre("B");
 
+        PageResponse<Restaurante> pageResponse =
+                new PageResponse<>(Arrays.asList(r1, r2),0, 10, 2, 10);
+
         when(restauranteRepository.findAllByOrderByNombreAsc(0, 10))
-                .thenReturn(Arrays.asList(r1, r2));
+                .thenReturn(pageResponse);
 
-        List<Restaurante> resultado = restauranteUseCase.obtenerRestaurantes(0, 10);
+        PageResponse<Restaurante> resultado = restauranteUseCase.obtenerRestaurantes(0, 10);
 
-        assertThat(resultado).containsExactly(r1, r2);
+        assertThat(resultado.getContent()).containsExactly(r1, r2);
+        assertThat(resultado.getTotalElements()).isEqualTo(2);
+        assertThat(resultado.getPage()).isEqualTo(0);
+        assertThat(resultado.getSize()).isEqualTo(10);
+
         verify(restauranteRepository, times(1)).findAllByOrderByNombreAsc(0, 10);
     }
 }

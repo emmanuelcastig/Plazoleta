@@ -16,4 +16,5 @@ public class Pedido {
     private Long idRestaurante;
     private List<PedidoPlato> platos;
     private Estado estado;
+    private Long idEmpleadoAsignado;
 }

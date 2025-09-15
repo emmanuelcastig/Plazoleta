@@ -2,6 +2,7 @@ package co.com.pragma.usecase.plato;
 
 import co.com.pragma.model.plato.Plato;
 import co.com.pragma.model.plato.gateways.PlatoRepository;
+import co.com.pragma.model.restaurante.PageResponse;
 import co.com.pragma.model.restaurante.Restaurante;
 import co.com.pragma.model.restaurante.gateways.RestauranteRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -96,13 +97,15 @@ class PlatoUseCaseTest {
         plato.setId(1L);
         plato.setDescripcion("Plato con categoría");
 
+        PageResponse<Plato> pageResponse = new PageResponse<>(List.of(plato),0, 1, 0, 5);
+
         when(platoRepository.findByIdRestauranteAndCategoria(1L, "Entradas", 0, 5))
-                .thenReturn(List.of(plato));
+                .thenReturn(pageResponse);
 
         var resultado = platoUseCase.obtenerPlatos(1L, "Entradas", 0, 5);
 
-        assertThat(resultado).hasSize(1);
-        assertThat(resultado.get(0).getDescripcion()).isEqualTo("Plato con categoría");
+        assertThat(resultado.getContent()).hasSize(1);
+        assertThat(resultado.getContent().get(0).getDescripcion()).isEqualTo("Plato con categoría");
 
         verify(platoRepository).findByIdRestauranteAndCategoria(1L, "Entradas", 0, 5);
         verify(platoRepository, never()).findByIdRestaurante(anyLong(), anyInt(), anyInt());
@@ -114,13 +117,15 @@ class PlatoUseCaseTest {
         plato.setId(2L);
         plato.setDescripcion("Plato sin categoría");
 
+        PageResponse<Plato> pageResponse = new PageResponse<>(List.of(plato),0, 5, 0, 5);
+
         when(platoRepository.findByIdRestaurante(1L, 0, 5))
-                .thenReturn(List.of(plato));
+                .thenReturn(pageResponse);
 
         var resultado = platoUseCase.obtenerPlatos(1L, null, 0, 5);
 
-        assertThat(resultado).hasSize(1);
-        assertThat(resultado.get(0).getDescripcion()).isEqualTo("Plato sin categoría");
+        assertThat(resultado.getContent()).hasSize(1);
+        assertThat(resultado.getContent().get(0).getDescripcion()).isEqualTo("Plato sin categoría");
 
         verify(platoRepository).findByIdRestaurante(1L, 0, 5);
         verify(platoRepository, never()).findByIdRestauranteAndCategoria(anyLong(), anyString(), anyInt(), anyInt());
@@ -128,12 +133,14 @@ class PlatoUseCaseTest {
 
     @Test
     void obtenerPlatos_categoriaVaciaUsaFindByIdRestaurante() {
+        PageResponse<Plato> emptyResponse = new PageResponse<>(List.of(),0, 0, 0, 5);
+
         when(platoRepository.findByIdRestaurante(1L, 0, 5))
-                .thenReturn(List.of());
+                .thenReturn(emptyResponse);
 
         var resultado = platoUseCase.obtenerPlatos(1L, "   ", 0, 5);
 
-        assertThat(resultado).isEmpty();
+        assertThat(resultado.getContent()).isEmpty();
 
         verify(platoRepository).findByIdRestaurante(1L, 0, 5);
         verify(platoRepository, never()).findByIdRestauranteAndCategoria(anyLong(), anyString(), anyInt(), anyInt());

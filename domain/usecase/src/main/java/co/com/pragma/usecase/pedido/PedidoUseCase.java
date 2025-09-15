@@ -22,7 +22,7 @@ public class PedidoUseCase {
     public void crearPedido(Pedido pedido) {
 
         boolean tieneEnProceso = pedidoRepository.existsByIdClienteAndEstadoIn(pedido.getIdCliente(),
-                List.of(Estado.PENDIENTE, Estado.EN_PROCESO, Estado.LISTO)
+                List.of(Estado.PENDIENTE, Estado.EN_PREPARACION, Estado.LISTO)
         );
 
         if (tieneEnProceso) {
@@ -52,5 +52,20 @@ public class PedidoUseCase {
 
     public Long obtenerIdRestaurante(Long idEmpleado, String token){
         return empleadoConsumerGateway.obtenerRestauranteEmpleado(idEmpleado, token);
+    }
+
+    public void asignarPedido(Long idEmpleado, Long idPedido, String token){
+        Pedido pedido = pedidoRepository.buscarPorIdPedido(idPedido)
+                .orElseThrow(() -> new IllegalArgumentException("El pedido con id " + idPedido + " no existe"));
+
+        Long idRestauranteEmpleado = obtenerIdRestaurante(idEmpleado, token); // si requieres token, pásalo
+        if (!pedido.getIdRestaurante().equals(idRestauranteEmpleado)) {
+            throw new IllegalStateException("El empleado no pertenece al restaurante del pedido");
+        }
+
+        pedido.setEstado(Estado.EN_PREPARACION);
+        pedido.setIdEmpleadoAsignado(idEmpleado);
+
+        pedidoRepository.actualizarPedido(pedido);
     }
 }

@@ -43,7 +43,7 @@ class PedidoUseCaseTest {
 
         pedidoUseCase.crearPedido(pedido);
 
-        assert pedido.getEstado() == Estado.PENDIENTE;
+        assertThat(pedido.getEstado()).isEqualTo(Estado.PENDIENTE);
         verify(pedidoRepository).crearPedido(pedido);
     }
 
@@ -124,4 +124,48 @@ class PedidoUseCaseTest {
         verify(empleadoConsumerGateway).obtenerRestauranteEmpleado(200L, "tk");
     }
 
+    @Test
+    void asignarPedido_exitosoCuandoEmpleadoPerteneceAlMismoRestaurante() {
+        Pedido pedido = new Pedido();
+        pedido.setId(1L);
+        pedido.setIdRestaurante(10L);
+
+        when(pedidoRepository.buscarPorIdPedido(1L)).thenReturn(Optional.of(pedido));
+        when(empleadoConsumerGateway.obtenerRestauranteEmpleado(100L, "token"))
+                .thenReturn(10L);
+
+        pedidoUseCase.asignarPedido(100L, 1L, "token");
+
+        assertThat(pedido.getEstado()).isEqualTo(Estado.EN_PREPARACION);
+        assertThat(pedido.getIdEmpleadoAsignado()).isEqualTo(100L);
+        verify(pedidoRepository).actualizarPedido(pedido);
+    }
+
+    @Test
+    void asignarPedido_fallaCuandoPedidoNoExiste() {
+        when(pedidoRepository.buscarPorIdPedido(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> pedidoUseCase.asignarPedido(100L, 1L, "tk"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("El pedido con id 1 no existe");
+
+        verify(pedidoRepository, never()).actualizarPedido(any());
+    }
+
+    @Test
+    void asignarPedido_fallaCuandoEmpleadoDeOtroRestaurante() {
+        Pedido pedido = new Pedido();
+        pedido.setId(1L);
+        pedido.setIdRestaurante(10L);
+
+        when(pedidoRepository.buscarPorIdPedido(1L)).thenReturn(Optional.of(pedido));
+        when(empleadoConsumerGateway.obtenerRestauranteEmpleado(200L, "tk"))
+                .thenReturn(20L); // distinto restaurante
+
+        assertThatThrownBy(() -> pedidoUseCase.asignarPedido(200L, 1L, "tk"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("El empleado no pertenece al restaurante del pedido");
+
+        verify(pedidoRepository, never()).actualizarPedido(any());
+    }
 }

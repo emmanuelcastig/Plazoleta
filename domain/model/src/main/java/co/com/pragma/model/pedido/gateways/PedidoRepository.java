@@ -5,10 +5,12 @@ import co.com.pragma.model.pedido.Pedido;
 import co.com.pragma.model.restaurante.PageResponse;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface PedidoRepository {
     void crearPedido(Pedido pedido);
     boolean existsByIdClienteAndEstadoIn(Long idCliente, List<Estado> estados);
     PageResponse<Pedido> findByEstadoAndIdRestaurante(Estado estado, Long idRestaurante, int page, int size);
-
+    Optional<Pedido> buscarPorIdPedido(Long id);
+    void actualizarPedido(Pedido pedido);
 }

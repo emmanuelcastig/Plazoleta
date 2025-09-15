@@ -99,4 +99,29 @@ public class PedidoRest {
         return ResponseEntity.ok(pedidos);
     }
 
+    @PatchMapping("/actualizar")
+    @Operation(
+            summary = "Asignar un pedido a un empleado",
+            description = "Permite que un empleado de un restaurante asigne un pedido a sí mismo para su preparación.",
+            responses = {
+                    @ApiResponse(responseCode = "204", description = "Pedido asignado exitosamente"),
+                    @ApiResponse(responseCode = "400", description = "Datos inválidos en la solicitud", content = @Content),
+                    @ApiResponse(responseCode = "401", description = "No autorizado", content = @Content),
+                    @ApiResponse(responseCode = "404", description = "Pedido no encontrado", content = @Content),
+                    @ApiResponse(responseCode = "409", description = "El pedido ya está asignado a otro empleado", content = @Content)
+            }
+    )
+    public ResponseEntity<Void> asignarEmpleado(
+            @Parameter(description = "ID del pedido que se desea asignar", required = true)
+            @RequestParam(name = "idPedido") Long idPedido,
+            @Parameter(hidden = true) Authentication authentication,
+            @Parameter(description = "Token JWT de autenticación", required = true)
+            @RequestHeader("Authorization") String token
+    ) {
+        String jwt = token.replace("Bearer ", "");
+        Long idEmpleado = Long.parseLong(authentication.getName());
+        pedidoUseCase.asignarPedido(idEmpleado, idPedido, jwt);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
 }
