@@ -5,7 +5,9 @@ import co.com.pragma.jpa.helper.AdapterOperations;
 import co.com.pragma.model.enums.Estado;
 import co.com.pragma.model.pedido.Pedido;
 import co.com.pragma.model.pedido.gateways.PedidoRepository;
+import co.com.pragma.model.restaurante.PageResponse;
 import org.reactivecommons.utils.ObjectMapper;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
@@ -33,8 +35,21 @@ public class PedidoJPARepositoryAdapter extends AdapterOperations<Pedido, Pedido
     }
 
     @Override
-    public List<Pedido> findByEstadoAndIdRestaurante(Estado estado, Long idRestaurante, int page, int size ) {
+    public PageResponse<Pedido> findByEstadoAndIdRestaurante(Estado estado, Long idRestaurante, int page, int size ) {
         Pageable pageable = PageRequest.of(page, size);
-        return repository.findByEstadoAndIdRestaurante(estado,idRestaurante,pageable).map(this::toEntity).toList();
+        Page<PedidoEntity> result = repository.findByEstadoAndIdRestaurante(estado, idRestaurante, pageable);
+
+        List<Pedido> content = result.getContent()
+                .stream()
+                .map(this::toEntity)
+                .toList();
+
+        return new PageResponse<>(
+                content,
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalElements(),
+                result.getTotalPages()
+        );
     }
 }

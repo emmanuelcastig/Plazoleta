@@ -4,6 +4,7 @@ import co.com.pragma.api.dto.PedidoRequest;
 import co.com.pragma.model.enums.Estado;
 import co.com.pragma.model.pedido.Pedido;
 import co.com.pragma.model.pedido.PedidoPlato;
+import co.com.pragma.model.restaurante.PageResponse;
 import co.com.pragma.usecase.pedido.PedidoUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -77,7 +78,7 @@ public class PedidoRest {
                     @ApiResponse(responseCode = "401", description = "No autorizado", content = @Content)
             }
     )
-    public ResponseEntity<List<Pedido>> listarPedidos(
+    public ResponseEntity<PageResponse<Pedido>> listarPedidos(
             @RequestParam(name = "estado") Estado estado,
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size" ,defaultValue = "10") int size,
@@ -87,11 +88,11 @@ public class PedidoRest {
         String jwt = token.replace("Bearer ", "");
         Long idEmpleado = Long.parseLong(authentication.getName());
 
-        List<Pedido> pedidos = pedidoUseCase.listarPedidosPorEstadoYRestaurante(
+        PageResponse<Pedido> pedidos = pedidoUseCase.listarPedidosPorEstadoYRestaurante(
                 idEmpleado, jwt, estado, page, size
         );
 
-        if (pedidos.isEmpty()) {
+        if (pedidos.getContent().isEmpty()) {
             return ResponseEntity.noContent().build();
         }
 

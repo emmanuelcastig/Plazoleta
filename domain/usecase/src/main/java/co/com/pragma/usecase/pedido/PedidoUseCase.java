@@ -6,6 +6,7 @@ import co.com.pragma.model.pedido.PedidoPlato;
 import co.com.pragma.model.pedido.gateways.PedidoRepository;
 import co.com.pragma.model.plato.Plato;
 import co.com.pragma.model.plato.gateways.PlatoRepository;
+import co.com.pragma.model.restaurante.PageResponse;
 import co.com.pragma.model.restaurante.consumer.EmpleadoConsumerGateway;
 import lombok.RequiredArgsConstructor;
 
@@ -44,7 +45,7 @@ public class PedidoUseCase {
         pedidoRepository.crearPedido(pedido);
     }
 
-    public List<Pedido> listarPedidosPorEstadoYRestaurante(Long idEmpleado, String token, Estado estado,int page, int size) {
+    public PageResponse<Pedido> listarPedidosPorEstadoYRestaurante(Long idEmpleado, String token, Estado estado, int page, int size) {
         Long idRestaurante = obtenerIdRestaurante(idEmpleado, token);
         return pedidoRepository.findByEstadoAndIdRestaurante(estado, idRestaurante, page, size);
     }

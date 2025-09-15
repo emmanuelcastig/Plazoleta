@@ -4,7 +4,9 @@ import co.com.pragma.jpa.entity.PlatoEntity;
 import co.com.pragma.jpa.helper.AdapterOperations;
 import co.com.pragma.model.plato.Plato;
 import co.com.pragma.model.plato.gateways.PlatoRepository;
+import co.com.pragma.model.restaurante.PageResponse;
 import org.reactivecommons.utils.ObjectMapper;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
@@ -38,14 +40,40 @@ public class PlatoJPARepositoryAdapter extends AdapterOperations<Plato, PlatoEnt
     }
 
     @Override
-    public List<Plato> findByIdRestaurante(Long idRestaurante, int page, int size) {
+    public PageResponse<Plato> findByIdRestaurante(Long idRestaurante, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return repository.findByIdRestaurante(idRestaurante, pageable).map(this::toEntity).toList();
+        Page<PlatoEntity> result = repository.findByIdRestaurante(idRestaurante, pageable);
+
+        List<Plato> content = result.getContent()
+                .stream()
+                .map(this::toEntity)
+                .toList();
+
+        return new PageResponse<>(
+                content,
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalElements(),
+                result.getTotalPages()
+        );
     }
 
     @Override
-    public List<Plato> findByIdRestauranteAndCategoria(Long idRestaurante, String categoria, int page, int size) {
+    public PageResponse<Plato> findByIdRestauranteAndCategoria(Long idRestaurante, String categoria, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return repository.findByIdRestauranteAndCategoria(idRestaurante,categoria,pageable).map(this::toEntity).toList();
+        Page<PlatoEntity> result = repository.findByIdRestauranteAndCategoria(idRestaurante, categoria,pageable);
+
+        List<Plato> content = result.getContent()
+                .stream()
+                .map(this::toEntity)
+                .toList();
+
+        return new PageResponse<>(
+                content,
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalElements(),
+                result.getTotalPages()
+        );
     }
 }

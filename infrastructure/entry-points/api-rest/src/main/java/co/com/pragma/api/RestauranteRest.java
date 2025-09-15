@@ -3,6 +3,7 @@ package co.com.pragma.api;
 import co.com.pragma.api.dto.RestauranteRequest;
 import co.com.pragma.api.dto.RestauranteResponse;
 import co.com.pragma.api.mapper.RestauranteMapper;
+import co.com.pragma.model.restaurante.PageResponse;
 import co.com.pragma.model.restaurante.Restaurante;
 import co.com.pragma.usecase.restaurante.RestauranteUseCase;
 import jakarta.validation.Valid;
@@ -69,19 +70,27 @@ public class RestauranteRest {
             }
     )
     @GetMapping("/restaurantes")
-    public ResponseEntity<List<RestauranteResponse>> obtenerRestaurantes(
+    public ResponseEntity<PageResponse<RestauranteResponse>> obtenerRestaurantes(
             @Parameter(description = "Número de página (empezando desde 0)", example = "0")
             @RequestParam(name = "page", defaultValue = "0") int page,
 
             @Parameter(description = "Cantidad de registros por página", example = "10")
             @RequestParam(name = "size", defaultValue = "10") int size
     ) {
-        List<Restaurante> restaurantes = restauranteUseCase.obtenerRestaurantes(page, size);
+        PageResponse<Restaurante> restaurantes = restauranteUseCase.obtenerRestaurantes(page, size);
 
-        var response = restaurantes.stream()
+        var content = restaurantes.getContent()
+                .stream()
                 .map(restauranteMapper::toResponse)
                 .toList();
 
+        PageResponse<RestauranteResponse> response = new PageResponse<>(
+                content,
+                restaurantes.getPage(),
+                restaurantes.getSize(),
+                restaurantes.getTotalElements(),
+                restaurantes.getTotalPages()
+        );
         return ResponseEntity.ok(response);
     }
 }
