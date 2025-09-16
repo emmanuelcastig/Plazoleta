@@ -22,7 +22,7 @@ public class PedidoUseCase {
     private final EmpleadoConsumerGateway empleadoConsumerGateway;
     private final PedidoConsumerGateway pedidoConsumerGateway;
 
-    public void crearPedido(Pedido pedido) {
+    public void crearPedido(Pedido pedido, String token) {
 
         boolean tieneEnProceso = pedidoRepository.existsByIdClienteAndEstadoIn(pedido.getIdCliente(),
                 List.of(Estado.PENDIENTE, Estado.EN_PREPARACION, Estado.LISTO)
@@ -45,7 +45,10 @@ public class PedidoUseCase {
 
         pedido.setEstado(Estado.PENDIENTE);
 
-        pedidoRepository.crearPedido(pedido);
+        Pedido pedidoGuardado = pedidoRepository.crearPedido(pedido);
+
+        enviarLogs(pedidoGuardado.getId(), pedido.getIdCliente(), null,
+                null, pedido.getEstado().name(), token);
     }
 
     public PageResponse<Pedido> listarPedidosPorEstadoYRestaurante(Long idEmpleado, String token, Estado estado, int page, int size) {
@@ -66,10 +69,14 @@ public class PedidoUseCase {
             throw new IllegalStateException("El empleado no pertenece al restaurante del pedido");
         }
 
+        String estadoAnterior = pedido.getEstado().name();
         pedido.setEstado(Estado.EN_PREPARACION);
         pedido.setIdEmpleadoAsignado(idEmpleado);
 
         pedidoRepository.actualizarPedido(pedido);
+
+        enviarLogs(pedido.getId(), pedido.getIdCliente(), idEmpleado,
+                estadoAnterior, pedido.getEstado().name(), token);
     }
 
     public String cambiarEstadoPedidoListo(Long idPedido,Long idEmpleado,String numeroTelefono,String token){
@@ -82,12 +89,16 @@ public class PedidoUseCase {
         }
 
         String pin = String.valueOf((int)(Math.random() * 9000) + 1000);
+        String estadoAnterior = pedido.getEstado().name();
         pedido.setEstado(Estado.LISTO);
         pedido.setPin(pin);
         pedidoRepository.actualizarPedido(pedido);
 
         String mensaje = "Tu pedido # " + pedido.getId() + " está LISTO. PIN: " + pin;
         pedidoConsumerGateway.enviarMensajeSms(numeroTelefono,mensaje,token);
+
+        enviarLogs(pedido.getId(), pedido.getIdCliente(), idEmpleado,
+                estadoAnterior, pedido.getEstado().name(), token);
 
         return "Pin: " + pin;
     }
@@ -113,8 +124,12 @@ public class PedidoUseCase {
             throw new IllegalArgumentException("El PIN ingresado es incorrecto");
         }
 
+        String estadoAnterior = pedido.getEstado().name();
         pedido.setEstado(Estado.ENTREGADO);
         pedidoRepository.actualizarPedido(pedido);
+
+        enviarLogs(pedido.getId(), pedido.getIdCliente(), idEmpleado,
+                estadoAnterior, pedido.getEstado().name(), token);
     }
 
     public void cancelarPedido(Long idPedido, Long idCliente, String numeroTelefono, String token){
@@ -124,16 +139,27 @@ public class PedidoUseCase {
         if (pedido.getEstado() != Estado.PENDIENTE) {
             String mensaje = "Lo sentimos, tu pedido ya está en preparación y no puede cancelarse";
             pedidoConsumerGateway.enviarMensajeSms(numeroTelefono,mensaje,token);
+            throw new IllegalStateException("Lo sentimos, tu pedido ya está en preparación y no puede cancelarse");
         }
 
         if (!Objects.equals(pedido.getIdCliente(), idCliente)) {
             throw new IllegalStateException("No puedes modificar un pedido que no hiciste");
         }
 
+        String estadoAnterior = pedido.getEstado().name();
         pedido.setEstado(Estado.CANCELADO);
         pedidoRepository.actualizarPedido(pedido);
+
         String mensaje = "Tu pedido # " + pedido.getId() + " ha sido CANCELADO correctamente";
         pedidoConsumerGateway.enviarMensajeSms(numeroTelefono,mensaje,token);
+
+        enviarLogs(pedido.getId(), pedido.getIdCliente(), null,
+                estadoAnterior, pedido.getEstado().name(), token);
+    }
+
+    public void enviarLogs(Long idPedido, Long idCliente, Long idEmpleado, String estadoAnterior, String estadoNuevo
+            ,String token){
+        pedidoConsumerGateway.crearLogPedido(idPedido, idCliente, idEmpleado, estadoAnterior, estadoNuevo, token);
     }
 
 }

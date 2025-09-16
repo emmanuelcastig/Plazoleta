@@ -91,7 +91,7 @@ class PedidoUseCaseTest {
 
         when(pedidoRepository.existsByIdClienteAndEstadoIn(eq(1L), anyList())).thenReturn(false);
 
-        pedidoUseCase.crearPedido(pedido);
+        pedidoUseCase.crearPedido(pedido, "tk");
 
         assertThat(pedido.getEstado()).isEqualTo(Estado.PENDIENTE);
         verify(pedidoRepository).crearPedido(pedido);
@@ -104,7 +104,7 @@ class PedidoUseCaseTest {
 
         when(pedidoRepository.existsByIdClienteAndEstadoIn(eq(1L), anyList())).thenReturn(true);
 
-        assertThatThrownBy(() -> pedidoUseCase.crearPedido(pedido))
+        assertThatThrownBy(() -> pedidoUseCase.crearPedido(pedido, "tk"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("El cliente ya tiene un pedido en proceso");
 
@@ -121,7 +121,7 @@ class PedidoUseCaseTest {
         when(pedidoRepository.existsByIdClienteAndEstadoIn(eq(1L), anyList())).thenReturn(false);
         when(platoRepository.buscarPlato(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> pedidoUseCase.crearPedido(pedido))
+        assertThatThrownBy(() -> pedidoUseCase.crearPedido(pedido, "tk"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("El plato con id 99 no existe");
 
@@ -142,7 +142,7 @@ class PedidoUseCaseTest {
         when(pedidoRepository.existsByIdClienteAndEstadoIn(eq(1L), anyList())).thenReturn(false);
         when(platoRepository.buscarPlato(5L)).thenReturn(Optional.of(plato));
 
-        assertThatThrownBy(() -> pedidoUseCase.crearPedido(pedido))
+        assertThatThrownBy(() -> pedidoUseCase.crearPedido(pedido, "tk"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("El plato con id 5 no pertenece al restaurante 10");
 
@@ -179,6 +179,7 @@ class PedidoUseCaseTest {
         Pedido pedido = new Pedido();
         pedido.setId(1L);
         pedido.setIdRestaurante(10L);
+        pedido.setEstado(Estado.PENDIENTE);
 
         when(pedidoRepository.buscarPorIdPedido(1L)).thenReturn(Optional.of(pedido));
         when(empleadoConsumerGateway.obtenerRestauranteEmpleado(100L, "token"))
@@ -347,7 +348,7 @@ class PedidoUseCaseTest {
         Pedido pedido = new Pedido();
         pedido.setId(1L);
         pedido.setEstado(Estado.PENDIENTE);
-        pedido.setIdCliente(20L);
+        pedido.setIdCliente(20L); // otro cliente
 
         when(pedidoRepository.buscarPorIdPedido(1L)).thenReturn(Optional.of(pedido));
 
@@ -360,7 +361,7 @@ class PedidoUseCaseTest {
     }
 
     @Test
-    void cancelarPedido_enviaSmsCuandoPedidoNoPendiente() {
+    void cancelarPedido_fallaCuandoPedidoNoPendiente() {
         Pedido pedido = new Pedido();
         pedido.setId(1L);
         pedido.setEstado(Estado.EN_PREPARACION);
@@ -368,13 +369,22 @@ class PedidoUseCaseTest {
 
         when(pedidoRepository.buscarPorIdPedido(1L)).thenReturn(Optional.of(pedido));
 
-        pedidoUseCase.cancelarPedido(1L, 10L, "3001234567", "tk");
+        assertThatThrownBy(() -> pedidoUseCase.cancelarPedido(1L, 10L, "3001234567", "tk"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Lo sentimos, tu pedido ya está en preparación y no puede cancelarse");
 
-        assertThat(pedido.getEstado()).isEqualTo(Estado.CANCELADO);
-        verify(pedidoRepository).actualizarPedido(pedido);
+        verify(pedidoRepository, never()).actualizarPedido(any());
         verify(pedidoConsumerGateway).enviarMensajeSms(eq("3001234567"),
                 contains("Lo sentimos, tu pedido ya está en preparación y no puede cancelarse"), eq("tk"));
-        verify(pedidoConsumerGateway).enviarMensajeSms(eq("3001234567"),
-                contains("Tu pedido # 1 ha sido CANCELADO correctamente"), eq("tk"));
+    }
+
+    @Test
+    void enviarLogs_delegaEnConsumerGateway() {
+        pedidoUseCase.enviarLogs(1L, 2L, 3L, "PENDIENTE", "LISTO", "tk");
+
+        verify(pedidoConsumerGateway).crearLogPedido(
+                eq(1L), eq(2L), eq(3L),
+                eq("PENDIENTE"), eq("LISTO"), eq("tk")
+        );
     }
 }

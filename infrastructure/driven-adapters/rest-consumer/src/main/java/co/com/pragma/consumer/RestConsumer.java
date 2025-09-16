@@ -124,4 +124,48 @@ public class RestConsumer  implements PropietarioConsumerGateway, EmpleadoConsum
             throw new RuntimeException("Error en la comunicación con el servicio de mensajería", e);
         }
     }
+
+    @Override
+    public void crearLogPedido(Long idPedido, Long idCliente, Long idEmpleado, String estadoAnterior, String estadoNuevo,
+    String token) {
+        String endpoint = "http://localhost:9003/api/v1/trazabilidad/registrar";
+
+        try {
+            LogPedidoRequest logPedidoRequest = LogPedidoRequest.builder()
+                    .idPedido(idPedido)
+                    .idCliente(idCliente)
+                    .idEmpleado(idEmpleado)
+                    .estadoAnterior(estadoAnterior)
+                    .estadoNuevo(estadoNuevo)
+                    .build();
+
+            String jsonBody = mapper.writeValueAsString(logPedidoRequest);
+
+            RequestBody body = RequestBody.create(
+                    jsonBody,
+                    MediaType.parse("application/json")
+            );
+
+            Request request = new Request.Builder()
+                    .url(endpoint)
+                    .post(body)
+                    .addHeader("Authorization", "Bearer " + token)
+                    .addHeader("Content-Type", "application/json")
+                    .build();
+
+            log.info("Consumir servicio trazabilidad en: {}", endpoint);
+            log.info("Payload enviado: {}", jsonBody);
+
+            try (Response response = client.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    throw new RuntimeException("Error al consumir servicio: " + response.code() +
+                            " - " + response.message());
+                }
+                log.info("Respuesta del servicio: {}", response.code());
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException("Error en la comunicación con el servicio de mensajería", e);
+        }
+    }
 }

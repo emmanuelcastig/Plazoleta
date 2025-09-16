@@ -26,8 +26,10 @@ public class PedidoJPARepositoryAdapter extends AdapterOperations<Pedido, Pedido
     }
 
     @Override
-    public void crearPedido(Pedido pedido) {
-        repository.save(toData(pedido));
+    public Pedido crearPedido(Pedido pedido) {
+        PedidoEntity entity = toData(pedido);
+        PedidoEntity saved = repository.save(entity);
+        return toEntity(saved);
     }
 
     @Override

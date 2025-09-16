@@ -50,9 +50,12 @@ public class PedidoRest {
                     content = @Content(schema = @Schema(implementation = PedidoRequest.class))
             )
             @RequestBody PedidoRequest request,
-            @Parameter(hidden = true) Authentication authentication
+            @Parameter(hidden = true) Authentication authentication,
+            @Parameter(description = "Token JWT de autenticación", required = true)
+            @RequestHeader("Authorization") String token
     ) {
         Long idCliente = Long.parseLong(authentication.getName());
+        String jwt = token.replace("Bearer ", "");
         Pedido pedido = Pedido.builder()
                 .idCliente(idCliente)
                 .idRestaurante(request.getIdRestaurante())
@@ -63,7 +66,7 @@ public class PedidoRest {
                 )
                 .build();
 
-        pedidoUseCase.crearPedido(pedido);
+        pedidoUseCase.crearPedido(pedido,jwt);
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -115,8 +118,8 @@ public class PedidoRest {
             @Parameter(description = "ID del pedido que se desea asignar", required = true)
             @RequestParam(name = "idPedido") Long idPedido,
             @Parameter(hidden = true) Authentication authentication,
-            @Parameter(description = "Token JWT de autenticación", required = true)
-            @RequestHeader("Authorization") String token
+                @Parameter(description = "Token JWT de autenticación", required = true)
+                @RequestHeader("Authorization") String token
     ) {
         String jwt = token.replace("Bearer ", "");
         Long idEmpleado = Long.parseLong(authentication.getName());
