@@ -168,4 +168,46 @@ public class PedidoRest {
         return ResponseEntity.status(HttpStatus.OK).body(pin);
     }
 
+    @PatchMapping("/entregar")
+    @Operation(
+            summary = "Marcar pedido como ENTREGADO",
+            description = "Permite que un empleado cambie el estado de un pedido a ENTREGADO. " +
+                    "el cliente deberá entregarle el PIN para reclamar el pedido",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "204",
+                            description = "Pedido marcado como ENTREGADO exitosamente."
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Solicitud inválida (por ejemplo, si el pedido pertenece a otro restaurante).",
+                            content = @Content
+                    ),
+                    @ApiResponse(
+                            responseCode = "401",
+                            description = "No autorizado (falta o token inválido).",
+                            content = @Content
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "El pedido no fue encontrado.",
+                            content = @Content
+                    )
+            }
+    )
+    public ResponseEntity<Void> entregarPedido(
+            @Parameter(description = "ID del pedido que se desea marcar como entregado", required = true)
+            @RequestParam(name = "idPedido") Long idPedido,
+            @Parameter(description = "PIN entregado por el cliente para reclamar el pedido", required = true)
+            @RequestParam(name = "pin") String pin,
+            @Parameter(hidden = true) Authentication authentication,
+            @Parameter(description = "Token JWT de autenticación", required = true)
+            @RequestHeader("Authorization") String token
+    ) {
+        String jwt = token.replace("Bearer ", "");
+        Long idEmpleado = Long.parseLong(authentication.getName());
+        pedidoUseCase.cambiarEstadoEntregado(idPedido,idEmpleado, pin, jwt);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
 }

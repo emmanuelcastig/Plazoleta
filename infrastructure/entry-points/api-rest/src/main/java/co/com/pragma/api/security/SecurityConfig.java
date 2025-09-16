@@ -27,6 +27,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/plazoleta/pedidos/listar").hasRole("EMPLEADO")
                         .requestMatchers("/api/v1/plazoleta/pedidos/asignarse").hasRole("EMPLEADO")
                         .requestMatchers("/api/v1/plazoleta/pedidos/listo").hasRole("EMPLEADO")
+                        .requestMatchers("/api/v1/plazoleta/pedidos/entregar").hasRole("EMPLEADO")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(new CustomAuthenticationEntryPoint()))

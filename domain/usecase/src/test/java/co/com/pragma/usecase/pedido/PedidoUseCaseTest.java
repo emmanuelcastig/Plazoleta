@@ -49,7 +49,7 @@ class PedidoUseCaseTest {
 
         when(pedidoRepository.buscarPorIdPedido(1L)).thenReturn(Optional.of(pedido));
         when(empleadoConsumerGateway.obtenerRestauranteEmpleado(100L, "tk"))
-                .thenReturn(10L); 
+                .thenReturn(10L);
 
         String result = pedidoUseCase.cambiarEstadoPedidoListo(1L, 100L, "3001234567", "tk");
 
@@ -215,6 +215,100 @@ class PedidoUseCaseTest {
         assertThatThrownBy(() -> pedidoUseCase.asignarPedido(200L, 1L, "tk"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("El empleado no pertenece al restaurante del pedido");
+
+        verify(pedidoRepository, never()).actualizarPedido(any());
+    }
+
+    @Test
+    void cambiarEstadoEntregado_exitoso() {
+        Pedido pedido = new Pedido();
+        pedido.setId(1L);
+        pedido.setIdRestaurante(10L);
+        pedido.setEstado(Estado.LISTO);
+        pedido.setPin("1234");
+
+        when(pedidoRepository.buscarPorIdPedido(1L)).thenReturn(Optional.of(pedido));
+        when(empleadoConsumerGateway.obtenerRestauranteEmpleado(100L, "tk")).thenReturn(10L);
+
+        pedidoUseCase.cambiarEstadoEntregado(1L, 100L, "1234", "tk");
+
+        assertThat(pedido.getEstado()).isEqualTo(Estado.ENTREGADO);
+        verify(pedidoRepository).actualizarPedido(pedido);
+    }
+
+    @Test
+    void cambiarEstadoEntregado_fallaCuandoPedidoNoExiste() {
+        when(pedidoRepository.buscarPorIdPedido(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> pedidoUseCase.cambiarEstadoEntregado(1L, 100L, "1234", "tk"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("El pedido con id 1 no existe");
+
+        verify(pedidoRepository, never()).actualizarPedido(any());
+    }
+
+    @Test
+    void cambiarEstadoEntregado_fallaCuandoPedidoYaEntregado() {
+        Pedido pedido = new Pedido();
+        pedido.setId(1L);
+        pedido.setEstado(Estado.ENTREGADO);
+
+        when(pedidoRepository.buscarPorIdPedido(1L)).thenReturn(Optional.of(pedido));
+
+        assertThatThrownBy(() -> pedidoUseCase.cambiarEstadoEntregado(1L, 100L, "1234", "tk"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("El pedido ya fue ENTREGADO y no puede modificarse");
+
+        verify(pedidoRepository, never()).actualizarPedido(any());
+    }
+
+    @Test
+    void cambiarEstadoEntregado_fallaCuandoPedidoNoEstaListo() {
+        Pedido pedido = new Pedido();
+        pedido.setId(1L);
+        pedido.setEstado(Estado.EN_PREPARACION);
+
+        when(pedidoRepository.buscarPorIdPedido(1L)).thenReturn(Optional.of(pedido));
+
+        assertThatThrownBy(() -> pedidoUseCase.cambiarEstadoEntregado(1L, 100L, "1234", "tk"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Solo los pedidos en estado LISTO pueden ser ENTREGADOS");
+
+        verify(pedidoRepository, never()).actualizarPedido(any());
+    }
+
+    @Test
+    void cambiarEstadoEntregado_fallaCuandoEmpleadoDeOtroRestaurante() {
+        Pedido pedido = new Pedido();
+        pedido.setId(1L);
+        pedido.setEstado(Estado.LISTO);
+        pedido.setIdRestaurante(10L);
+        pedido.setPin("1234");
+
+        when(pedidoRepository.buscarPorIdPedido(1L)).thenReturn(Optional.of(pedido));
+        when(empleadoConsumerGateway.obtenerRestauranteEmpleado(200L, "tk")).thenReturn(20L);
+
+        assertThatThrownBy(() -> pedidoUseCase.cambiarEstadoEntregado(1L, 200L, "1234", "tk"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("El empleado no pertenece al restaurante del pedido");
+
+        verify(pedidoRepository, never()).actualizarPedido(any());
+    }
+
+    @Test
+    void cambiarEstadoEntregado_fallaCuandoPinIncorrecto() {
+        Pedido pedido = new Pedido();
+        pedido.setId(1L);
+        pedido.setEstado(Estado.LISTO);
+        pedido.setIdRestaurante(10L);
+        pedido.setPin("1234");
+
+        when(pedidoRepository.buscarPorIdPedido(1L)).thenReturn(Optional.of(pedido));
+        when(empleadoConsumerGateway.obtenerRestauranteEmpleado(100L, "tk")).thenReturn(10L);
+
+        assertThatThrownBy(() -> pedidoUseCase.cambiarEstadoEntregado(1L, 100L, "9999", "tk"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("El PIN ingresado es incorrecto");
 
         verify(pedidoRepository, never()).actualizarPedido(any());
     }

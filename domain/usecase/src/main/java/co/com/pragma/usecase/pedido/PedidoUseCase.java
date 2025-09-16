@@ -91,5 +91,29 @@ public class PedidoUseCase {
         return "Pin: " + pin;
     }
 
+    public void cambiarEstadoEntregado(Long idPedido, Long idEmpleado, String pin, String token) {
+        Pedido pedido = pedidoRepository.buscarPorIdPedido(idPedido)
+                .orElseThrow(() -> new IllegalArgumentException("El pedido con id " + idPedido + " no existe"));
+
+        if (pedido.getEstado() == Estado.ENTREGADO) {
+            throw new IllegalStateException("El pedido ya fue ENTREGADO y no puede modificarse");
+        }
+
+        if (pedido.getEstado() != Estado.LISTO) {
+            throw new IllegalStateException("Solo los pedidos en estado LISTO pueden ser ENTREGADOS");
+        }
+
+        Long idRestauranteEmpleado = obtenerIdRestaurante(idEmpleado, token);
+        if (!pedido.getIdRestaurante().equals(idRestauranteEmpleado)) {
+            throw new IllegalStateException("El empleado no pertenece al restaurante del pedido");
+        }
+
+        if (!pedido.getPin().equals(pin)) {
+            throw new IllegalArgumentException("El PIN ingresado es incorrecto");
+        }
+
+        pedido.setEstado(Estado.ENTREGADO);
+        pedidoRepository.actualizarPedido(pedido);
+    }
 
 }
