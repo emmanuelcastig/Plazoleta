@@ -4,7 +4,8 @@ public enum Estado {
     PENDIENTE("PENDIENTE"),
     EN_PREPARACION("EN_PREPARACION"),
     LISTO("LISTO"),
-    ENTREGADO("ENTREGADO");
+    ENTREGADO("ENTREGADO"),
+    CANCELADO("CANCELADO");
 
     private final String nombre;
 

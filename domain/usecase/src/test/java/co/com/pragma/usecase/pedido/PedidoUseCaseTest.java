@@ -312,4 +312,69 @@ class PedidoUseCaseTest {
 
         verify(pedidoRepository, never()).actualizarPedido(any());
     }
+
+    @Test
+    void cancelarPedido_exitosoCuandoEsPendienteYClienteCorrecto() {
+        Pedido pedido = new Pedido();
+        pedido.setId(1L);
+        pedido.setEstado(Estado.PENDIENTE);
+        pedido.setIdCliente(10L);
+
+        when(pedidoRepository.buscarPorIdPedido(1L)).thenReturn(Optional.of(pedido));
+
+        pedidoUseCase.cancelarPedido(1L, 10L, "3001234567", "tk");
+
+        assertThat(pedido.getEstado()).isEqualTo(Estado.CANCELADO);
+        verify(pedidoRepository).actualizarPedido(pedido);
+        verify(pedidoConsumerGateway).enviarMensajeSms(eq("3001234567"),
+                contains("Tu pedido # 1 ha sido CANCELADO correctamente"), eq("tk"));
+    }
+
+    @Test
+    void cancelarPedido_fallaCuandoPedidoNoExiste() {
+        when(pedidoRepository.buscarPorIdPedido(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> pedidoUseCase.cancelarPedido(1L, 10L, "3001234567", "tk"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("El pedido con id 1 no existe");
+
+        verify(pedidoRepository, never()).actualizarPedido(any());
+        verify(pedidoConsumerGateway, never()).enviarMensajeSms(any(), any(), any());
+    }
+
+    @Test
+    void cancelarPedido_fallaCuandoClienteNoEsDueno() {
+        Pedido pedido = new Pedido();
+        pedido.setId(1L);
+        pedido.setEstado(Estado.PENDIENTE);
+        pedido.setIdCliente(20L);
+
+        when(pedidoRepository.buscarPorIdPedido(1L)).thenReturn(Optional.of(pedido));
+
+        assertThatThrownBy(() -> pedidoUseCase.cancelarPedido(1L, 10L, "3001234567", "tk"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("No puedes modificar un pedido que no hiciste");
+
+        verify(pedidoRepository, never()).actualizarPedido(any());
+        verify(pedidoConsumerGateway, never()).enviarMensajeSms(any(), any(), any());
+    }
+
+    @Test
+    void cancelarPedido_enviaSmsCuandoPedidoNoPendiente() {
+        Pedido pedido = new Pedido();
+        pedido.setId(1L);
+        pedido.setEstado(Estado.EN_PREPARACION);
+        pedido.setIdCliente(10L);
+
+        when(pedidoRepository.buscarPorIdPedido(1L)).thenReturn(Optional.of(pedido));
+
+        pedidoUseCase.cancelarPedido(1L, 10L, "3001234567", "tk");
+
+        assertThat(pedido.getEstado()).isEqualTo(Estado.CANCELADO);
+        verify(pedidoRepository).actualizarPedido(pedido);
+        verify(pedidoConsumerGateway).enviarMensajeSms(eq("3001234567"),
+                contains("Lo sentimos, tu pedido ya está en preparación y no puede cancelarse"), eq("tk"));
+        verify(pedidoConsumerGateway).enviarMensajeSms(eq("3001234567"),
+                contains("Tu pedido # 1 ha sido CANCELADO correctamente"), eq("tk"));
+    }
 }

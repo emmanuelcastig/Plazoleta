@@ -12,6 +12,7 @@ import co.com.pragma.model.consumer.EmpleadoConsumerGateway;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
+import java.util.Objects;
 
 @RequiredArgsConstructor
 public class PedidoUseCase {
@@ -114,6 +115,25 @@ public class PedidoUseCase {
 
         pedido.setEstado(Estado.ENTREGADO);
         pedidoRepository.actualizarPedido(pedido);
+    }
+
+    public void cancelarPedido(Long idPedido, Long idCliente, String numeroTelefono, String token){
+        Pedido pedido = pedidoRepository.buscarPorIdPedido(idPedido)
+                .orElseThrow(() -> new IllegalArgumentException("El pedido con id " + idPedido + " no existe"));
+
+        if (pedido.getEstado() != Estado.PENDIENTE) {
+            String mensaje = "Lo sentimos, tu pedido ya está en preparación y no puede cancelarse";
+            pedidoConsumerGateway.enviarMensajeSms(numeroTelefono,mensaje,token);
+        }
+
+        if (!Objects.equals(pedido.getIdCliente(), idCliente)) {
+            throw new IllegalStateException("No puedes modificar un pedido que no hiciste");
+        }
+
+        pedido.setEstado(Estado.CANCELADO);
+        pedidoRepository.actualizarPedido(pedido);
+        String mensaje = "Tu pedido # " + pedido.getId() + " ha sido CANCELADO correctamente";
+        pedidoConsumerGateway.enviarMensajeSms(numeroTelefono,mensaje,token);
     }
 
 }

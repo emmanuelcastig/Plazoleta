@@ -210,4 +210,46 @@ public class PedidoRest {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
+    @PatchMapping("/cancelar")
+    @Operation(
+            summary = "Marcar pedido como CANCELADO",
+            description = "Permite que un cliente cambie el estado de un pedido a CANCELADO.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "204",
+                            description = "Pedido CANCELADO exitosamente."
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Solicitud inválida (por ejemplo, si se intenta cancelar un pedido que no es" +
+                                    "del cliente).",
+                            content = @Content
+                    ),
+                    @ApiResponse(
+                            responseCode = "401",
+                            description = "No autorizado (falta o token inválido).",
+                            content = @Content
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "El pedido no fue encontrado.",
+                            content = @Content
+                    )
+            }
+    )
+    public ResponseEntity<Void> cancelarPedido(
+            @Parameter(description = "ID del pedido que se desea cancelar", required = true)
+            @RequestParam(name = "idPedido") Long idPedido,
+            @Parameter(description = "Número de teléfono del cliente al que se enviará SMS", required = true)
+            @RequestParam(name = "telefonoCliente") String telefonoCliente,
+            @Parameter(hidden = true) Authentication authentication,
+            @Parameter(description = "Token JWT de autenticación", required = true)
+            @RequestHeader("Authorization") String token
+    ) {
+        String jwt = token.replace("Bearer ", "");
+        Long idCliente = Long.parseLong(authentication.getName());
+        pedidoUseCase.cancelarPedido(idPedido,idCliente, telefonoCliente, jwt);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
 }
