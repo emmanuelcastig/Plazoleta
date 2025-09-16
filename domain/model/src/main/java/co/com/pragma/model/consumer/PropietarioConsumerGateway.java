@@ -1,4 +1,4 @@
-package co.com.pragma.model.restaurante.consumer;
+package co.com.pragma.model.consumer;
 
 public interface PropietarioConsumerGateway {
     boolean verificarExistenciaPropietario(Long id, String token);

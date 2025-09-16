@@ -31,5 +31,6 @@ public class PedidoEntity {
     @Enumerated(EnumType.STRING)
     private Estado estado;
     private Long idEmpleadoAsignado;
+    private String pin;
 }
 

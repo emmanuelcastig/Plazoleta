@@ -99,7 +99,7 @@ public class PedidoRest {
         return ResponseEntity.ok(pedidos);
     }
 
-    @PatchMapping("/actualizar")
+    @PatchMapping("/asignarse")
     @Operation(
             summary = "Asignar un pedido a un empleado",
             description = "Permite que un empleado de un restaurante asigne un pedido a sí mismo para su preparación.",
@@ -122,6 +122,50 @@ public class PedidoRest {
         Long idEmpleado = Long.parseLong(authentication.getName());
         pedidoUseCase.asignarPedido(idEmpleado, idPedido, jwt);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    @PatchMapping("/listo")
+    @Operation(
+            summary = "Marcar pedido como listo",
+            description = "Permite que un empleado cambie el estado de un pedido a LISTO. " +
+                    "Cuando el pedido se marca como listo, se genera un PIN de 4 dígitos " +
+                    "y se envía por SMS al cliente asociado al pedido.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Pedido marcado como listo exitosamente. Devuelve el PIN de verificación.",
+                            content = @Content(schema = @Schema(implementation = String.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Solicitud inválida (por ejemplo, si el pedido pertenece a otro restaurante).",
+                            content = @Content
+                    ),
+                    @ApiResponse(
+                            responseCode = "401",
+                            description = "No autorizado (falta o token inválido).",
+                            content = @Content
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "El pedido no fue encontrado.",
+                            content = @Content
+                    )
+            }
+    )
+    public ResponseEntity<String> cambiarEstadoListo(
+            @Parameter(description = "ID del pedido que se desea marcar como listo", required = true)
+            @RequestParam(name = "idPedido") Long idPedido,
+            @Parameter(description = "Número de teléfono del cliente al que se enviará el PIN por SMS", required = true)
+            @RequestParam(name = "telefonoCliente") String telefonoCliente,
+            @Parameter(hidden = true) Authentication authentication,
+            @Parameter(description = "Token JWT de autenticación", required = true)
+            @RequestHeader("Authorization") String token
+    ) {
+        String jwt = token.replace("Bearer ", "");
+        Long idEmpleado = Long.parseLong(authentication.getName());
+        String pin = pedidoUseCase.cambiarEstadoPedidoListo(idPedido,idEmpleado, telefonoCliente, jwt);
+        return ResponseEntity.status(HttpStatus.OK).body(pin);
     }
 
 }

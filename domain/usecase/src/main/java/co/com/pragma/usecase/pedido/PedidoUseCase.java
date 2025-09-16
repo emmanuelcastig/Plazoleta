@@ -1,5 +1,6 @@
 package co.com.pragma.usecase.pedido;
 
+import co.com.pragma.model.consumer.PedidoConsumerGateway;
 import co.com.pragma.model.enums.Estado;
 import co.com.pragma.model.pedido.Pedido;
 import co.com.pragma.model.pedido.PedidoPlato;
@@ -7,7 +8,7 @@ import co.com.pragma.model.pedido.gateways.PedidoRepository;
 import co.com.pragma.model.plato.Plato;
 import co.com.pragma.model.plato.gateways.PlatoRepository;
 import co.com.pragma.model.restaurante.PageResponse;
-import co.com.pragma.model.restaurante.consumer.EmpleadoConsumerGateway;
+import co.com.pragma.model.consumer.EmpleadoConsumerGateway;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
@@ -18,6 +19,7 @@ public class PedidoUseCase {
     private final PedidoRepository pedidoRepository;
     private final PlatoRepository platoRepository;
     private final EmpleadoConsumerGateway empleadoConsumerGateway;
+    private final PedidoConsumerGateway pedidoConsumerGateway;
 
     public void crearPedido(Pedido pedido) {
 
@@ -58,7 +60,7 @@ public class PedidoUseCase {
         Pedido pedido = pedidoRepository.buscarPorIdPedido(idPedido)
                 .orElseThrow(() -> new IllegalArgumentException("El pedido con id " + idPedido + " no existe"));
 
-        Long idRestauranteEmpleado = obtenerIdRestaurante(idEmpleado, token); // si requieres token, pásalo
+        Long idRestauranteEmpleado = obtenerIdRestaurante(idEmpleado, token);
         if (!pedido.getIdRestaurante().equals(idRestauranteEmpleado)) {
             throw new IllegalStateException("El empleado no pertenece al restaurante del pedido");
         }
@@ -68,4 +70,26 @@ public class PedidoUseCase {
 
         pedidoRepository.actualizarPedido(pedido);
     }
+
+    public String cambiarEstadoPedidoListo(Long idPedido,Long idEmpleado,String numeroTelefono,String token){
+        Pedido pedido = pedidoRepository.buscarPorIdPedido(idPedido)
+                .orElseThrow(() -> new IllegalArgumentException("El pedido con id " + idPedido + " no existe"));
+
+        Long idRestauranteEmpleado = obtenerIdRestaurante(idEmpleado, token);
+        if (!pedido.getIdRestaurante().equals(idRestauranteEmpleado)) {
+            throw new IllegalStateException("El empleado no pertenece al restaurante del pedido");
+        }
+
+        String pin = String.valueOf((int)(Math.random() * 9000) + 1000);
+        pedido.setEstado(Estado.LISTO);
+        pedido.setPin(pin);
+        pedidoRepository.actualizarPedido(pedido);
+
+        String mensaje = "Tu pedido # " + pedido.getId() + " está LISTO. PIN: " + pin;
+        pedidoConsumerGateway.enviarMensajeSms(numeroTelefono,mensaje,token);
+
+        return "Pin: " + pin;
+    }
+
+
 }

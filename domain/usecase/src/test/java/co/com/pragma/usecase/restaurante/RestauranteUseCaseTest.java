@@ -2,7 +2,7 @@ package co.com.pragma.usecase.restaurante;
 
 import co.com.pragma.model.restaurante.PageResponse;
 import co.com.pragma.model.restaurante.Restaurante;
-import co.com.pragma.model.restaurante.consumer.PropietarioConsumerGateway;
+import co.com.pragma.model.consumer.PropietarioConsumerGateway;
 import co.com.pragma.model.restaurante.gateways.RestauranteRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

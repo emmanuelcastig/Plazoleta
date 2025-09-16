@@ -1,12 +1,13 @@
 package co.com.pragma.usecase.pedido;
 
+import co.com.pragma.model.consumer.PedidoConsumerGateway;
 import co.com.pragma.model.enums.Estado;
 import co.com.pragma.model.pedido.Pedido;
 import co.com.pragma.model.pedido.PedidoPlato;
 import co.com.pragma.model.pedido.gateways.PedidoRepository;
 import co.com.pragma.model.plato.Plato;
 import co.com.pragma.model.plato.gateways.PlatoRepository;
-import co.com.pragma.model.restaurante.consumer.EmpleadoConsumerGateway;
+import co.com.pragma.model.consumer.EmpleadoConsumerGateway;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -18,10 +19,10 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.*;
 
 class PedidoUseCaseTest {
-
     private PedidoRepository pedidoRepository;
     private PlatoRepository platoRepository;
     private EmpleadoConsumerGateway empleadoConsumerGateway;
+    private PedidoConsumerGateway pedidoConsumerGateway;
     private PedidoUseCase pedidoUseCase;
 
     @BeforeEach
@@ -29,7 +30,56 @@ class PedidoUseCaseTest {
         pedidoRepository = mock(PedidoRepository.class);
         platoRepository = mock(PlatoRepository.class);
         empleadoConsumerGateway = mock(EmpleadoConsumerGateway.class);
-        pedidoUseCase = new PedidoUseCase(pedidoRepository, platoRepository, empleadoConsumerGateway);
+        pedidoConsumerGateway = mock(PedidoConsumerGateway.class);
+
+        pedidoUseCase = new PedidoUseCase(
+                pedidoRepository,
+                platoRepository,
+                empleadoConsumerGateway,
+                pedidoConsumerGateway
+        );
+    }
+
+    @Test
+    void cambiarEstadoPedidoListo_exitoso() {
+        Pedido pedido = new Pedido();
+        pedido.setId(1L);
+        pedido.setIdRestaurante(10L);
+        pedido.setEstado(Estado.EN_PREPARACION);
+
+        when(pedidoRepository.buscarPorIdPedido(1L)).thenReturn(Optional.of(pedido));
+        when(empleadoConsumerGateway.obtenerRestauranteEmpleado(100L, "tk"))
+                .thenReturn(10L); 
+
+        String result = pedidoUseCase.cambiarEstadoPedidoListo(1L, 100L, "3001234567", "tk");
+
+        assertThat(pedido.getEstado()).isEqualTo(Estado.LISTO);
+        assertThat(pedido.getPin()).isNotNull();
+        assertThat(pedido.getPin()).hasSize(4);
+
+        verify(pedidoRepository).actualizarPedido(pedido);
+        verify(pedidoConsumerGateway).enviarMensajeSms(eq("3001234567"),
+                contains("Tu pedido # 1 está LISTO. PIN:"), eq("tk"));
+
+        assertThat(result).contains("Pin: ");
+    }
+
+    @Test
+    void cambiarEstadoPedidoListo_fallaCuandoEmpleadoDeOtroRestaurante() {
+        Pedido pedido = new Pedido();
+        pedido.setId(1L);
+        pedido.setIdRestaurante(10L);
+
+        when(pedidoRepository.buscarPorIdPedido(1L)).thenReturn(Optional.of(pedido));
+        when(empleadoConsumerGateway.obtenerRestauranteEmpleado(200L, "tk"))
+                .thenReturn(20L);
+
+        assertThatThrownBy(() -> pedidoUseCase.cambiarEstadoPedidoListo(1L, 200L, "3001234567", "tk"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("El empleado no pertenece al restaurante del pedido");
+
+        verify(pedidoRepository, never()).actualizarPedido(any());
+        verify(pedidoConsumerGateway, never()).enviarMensajeSms(any(), any(), any());
     }
 
     @Test

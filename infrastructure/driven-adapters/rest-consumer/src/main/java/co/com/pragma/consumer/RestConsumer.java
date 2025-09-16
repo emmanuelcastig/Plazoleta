@@ -1,21 +1,19 @@
 package co.com.pragma.consumer;
 
-import co.com.pragma.model.restaurante.consumer.EmpleadoConsumerGateway;
-import co.com.pragma.model.restaurante.consumer.PropietarioConsumerGateway;
+import co.com.pragma.model.consumer.EmpleadoConsumerGateway;
+import co.com.pragma.model.consumer.PedidoConsumerGateway;
+import co.com.pragma.model.consumer.PropietarioConsumerGateway;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
+import okhttp3.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 @Slf4j
 @Service
-public class RestConsumer  implements PropietarioConsumerGateway, EmpleadoConsumerGateway
+public class RestConsumer  implements PropietarioConsumerGateway, EmpleadoConsumerGateway, PedidoConsumerGateway
 {
     private final String url;
     private final OkHttpClient client;
@@ -77,6 +75,53 @@ public class RestConsumer  implements PropietarioConsumerGateway, EmpleadoConsum
             return Long.parseLong(body);
         } catch (IOException e) {
             throw new RuntimeException("Error en la comunicación con el servicio usuarios", e);
+        }
+    }
+
+    @Override
+    @CircuitBreaker(name = "propietarioService")
+    public void enviarMensajeSms(String telefonoDestino, String mensaje, String token) {
+        String endpoint = "http://localhost:9002/api/v1/mensajeria/enviar-sms";
+
+        try {
+            // Normalizar número: quitar espacios y agregar prefijo +
+            telefonoDestino = telefonoDestino.trim();
+            if (!telefonoDestino.startsWith("+")) {
+                telefonoDestino = "+" + telefonoDestino;
+            }
+
+            ObjectRequest objectRequest = ObjectRequest.builder()
+                    .telefonoDestino(telefonoDestino)
+                    .mensaje(mensaje)
+                    .build();
+
+            String jsonBody = mapper.writeValueAsString(objectRequest);
+
+            RequestBody body = RequestBody.create(
+                    jsonBody,
+                    MediaType.parse("application/json")
+            );
+
+            Request request = new Request.Builder()
+                    .url(endpoint)
+                    .post(body)
+                    .addHeader("Authorization", "Bearer " + token)
+                    .addHeader("Content-Type", "application/json")
+                    .build();
+
+            log.info("Consumir servicio mensajería en: {}", endpoint);
+            log.info("Payload enviado: {}", jsonBody);
+
+            try (Response response = client.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    throw new RuntimeException("Error al consumir servicio: " + response.code() +
+                            " - " + response.message());
+                }
+                log.info("Respuesta del servicio: {}", response.code());
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException("Error en la comunicación con el servicio de mensajería", e);
         }
     }
 }

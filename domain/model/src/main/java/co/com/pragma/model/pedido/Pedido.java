@@ -17,4 +17,5 @@ public class Pedido {
     private List<PedidoPlato> platos;
     private Estado estado;
     private Long idEmpleadoAsignado;
+    private String pin;
 }
